@@ -1,5 +1,6 @@
 package com.back.homeapp.mqtt
 
+import com.back.homeapp.device.DeviceService
 import com.back.homeapp.humidityReport.HumidityReportRequest
 import com.back.homeapp.humidityReport.HumidityReportService
 import com.back.homeapp.temperatureReport.TemperatureReportRequest
@@ -25,7 +26,8 @@ class MqttSubscriberService(
     private val mqttProperties: MqttProperties,
     private val objectMapper: ObjectMapper,
     private val humidityReportService: HumidityReportService,
-    private val temperatureReportService: TemperatureReportService
+    private val temperatureReportService: TemperatureReportService,
+    private val deviceService: DeviceService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -38,105 +40,108 @@ class MqttSubscriberService(
             "Starting MQTT client with broker={} topic={} clientId={}",
             mqttProperties.brokerUrl,
             mqttProperties.topic,
-            runtimeClientId
+            runtimeClientId,
         )
 
         println("Starting MQTT client on topic ${mqttProperties.topic} via ${mqttProperties.brokerUrl}")
 
-        client = MqttClient(
-            mqttProperties.brokerUrl,
-            runtimeClientId
+        client =
+            MqttClient(
+                mqttProperties.brokerUrl,
+                runtimeClientId,
+            )
+
+        client.setCallback(
+            object : MqttCallback {
+                override fun connectionLost(cause: Throwable?) {
+                    logger.warn(
+                        "MQTT connection lost for broker={} topic={} clientId={}",
+                        mqttProperties.brokerUrl,
+                        mqttProperties.topic,
+                        client.clientId,
+                        cause,
+                    )
+                }
+
+                override fun messageArrived(
+                    topic: String,
+                    message: MqttMessage,
+                ) {
+                    val payload = String(message.payload)
+                    logger.info(
+                        "MQTT message received on topic={} payload={}",
+                        topic,
+                        payload,
+                    )
+                    println("MQTT message received on $topic: $payload")
+                    logger.debug(
+                        "MQTT message received on topic={} payloadBytes={} clientConnected={}",
+                        topic,
+                        message.payload.size,
+                        client.isConnected,
+                    )
+                    handleMessage(topic, payload)
+                }
+
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                    // Subscriber only.
+                }
+            },
         )
 
-        client.setCallback(object : MqttCallback {
-            override fun connectionLost(cause: Throwable?) {
-                logger.warn(
-                    "MQTT connection lost for broker={} topic={} clientId={}",
-                    mqttProperties.brokerUrl,
-                    mqttProperties.topic,
-                    client.clientId,
-                    cause
-                )
+        val options =
+            MqttConnectOptions().apply {
+                isAutomaticReconnect = true
+                isCleanSession = false
             }
-
-            override fun messageArrived(topic: String, message: MqttMessage) {
-                val payload = String(message.payload)
-                logger.info(
-                    "MQTT message received on topic={} payload={}",
-                    topic,
-                    payload
-                )
-                println("MQTT message received on $topic: $payload")
-                logger.debug(
-                    "MQTT message received on topic={} payloadBytes={} clientConnected={}",
-                    topic,
-                    message.payload.size,
-                    client.isConnected
-                )
-                handleMessage(topic, payload)
-            }
-
-            override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                // Subscriber only.
-            }
-        })
-
-        val options = MqttConnectOptions().apply {
-            isAutomaticReconnect = true
-            isCleanSession = false
-        }
 
         logger.info(
             "Connecting to MQTT broker {} with clientId={} automaticReconnect={} cleanSession={}",
             mqttProperties.brokerUrl,
             client.clientId,
             options.isAutomaticReconnect,
-            options.isCleanSession
+            options.isCleanSession,
         )
         client.connect(options)
         logger.info(
             "Connected to MQTT broker {} with clientId={}",
             mqttProperties.brokerUrl,
-            client.clientId
+            client.clientId,
         )
 
         client.subscribe(mqttProperties.topic)
         logger.info(
             "Subscribed to MQTT topic {} with clientId={}",
             mqttProperties.topic,
-            client.clientId
+            client.clientId,
         )
     }
 
-    private fun handleMessage(topic: String, payload: String) {
+    private fun handleMessage(
+        topic: String,
+        payload: String,
+    ) {
         try {
             val message = objectMapper.readValue(payload, SensorReadingMessage::class.java)
+            val device = deviceService.findByIdentifierAndHomeIdentifier(message.deviceIdentifier, message.homeIdentifier)
 
-            val humidityReport = HumidityReportRequest(
-                timestamp = Instant.now(),
-                value = message.humidity,
-                deviceId = message.deviceId
-            )
+            val humidityReport =
+                HumidityReportRequest(
+                    timestamp = Instant.now(),
+                    value = message.humidity,
+                    deviceId = device.id!!,
+                )
 
-            val temperatureReport = TemperatureReportRequest(
-                timestamp = Instant.now(),
-                value = message.temperature,
-                deviceId = message.deviceId
-            )
+            val temperatureReport =
+                TemperatureReportRequest(
+                    timestamp = Instant.now(),
+                    value = message.temperature,
+                    deviceId = device.id!!,
+                )
 
+            deviceService.markConnected(device.id!!)
             humidityReportService.create(humidityReport)
             temperatureReportService.create(temperatureReport)
-            /*val entity = SensorReading(
-                sensorId = "0",
-                temperature = message.temperature,
-                humidity = message.humidity,
-                measuredAt = message.measuredAt ?: Instant.now()
-            )*/
-
-
-
-            //sensorReadingRepository.save(entity)
-            //logger.debug("Stored reading from topic {} for sensor {}", topic, entity.sensorId)
         } catch (ex: Exception) {
             logger.error("Failed to process MQTT payload from topic {}: {}", topic, payload, ex)
         }
@@ -153,13 +158,13 @@ class MqttSubscriberService(
                 logger.info(
                     "Disconnecting MQTT client clientId={} from broker={}",
                     client.clientId,
-                    mqttProperties.brokerUrl
+                    mqttProperties.brokerUrl,
                 )
                 client.disconnect()
                 logger.info(
                     "Disconnected MQTT client clientId={} from broker={}",
                     client.clientId,
-                    mqttProperties.brokerUrl
+                    mqttProperties.brokerUrl,
                 )
             }
         } catch (ex: MqttException) {

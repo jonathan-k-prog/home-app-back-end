@@ -5,12 +5,10 @@ import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest(
     classes = [HomeAppApplication::class],
-    properties = ["mqtt.enabled=false"]
+    properties = ["mqtt.enabled=false"],
 )
 class HomeAppApplicationTests {
-
     @Test
     fun contextLoads() {
     }
-
 }

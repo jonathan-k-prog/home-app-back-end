@@ -1,8 +1,6 @@
 package com.back.homeapp.humidityReport
 
 import com.back.homeapp.device.Device
-import com.back.homeapp.device.DeviceResponse
-import com.back.homeapp.room.Room
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -15,25 +13,23 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "humidity_report")
+@Table(name = "humidity_reports")
 class HumidityReport(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-
-    @Column(name = "value", nullable = false)
+    @Column(name = "`value`", nullable = false)
     val value: Double = 0.0,
-
     @Column(name = "timestamp", nullable = false)
     val timestamp: Instant = Instant.now(),
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deviceId", nullable = false)
     val device: Device,
-){
-    fun toResponse() = HumidityReportResponse(
-        id = id,
-        value = value,
-        timestamp = timestamp.toEpochMilli(),
-    )
+) {
+    fun toResponse() =
+        HumidityReportResponse(
+            id = id,
+            value = value,
+            timestamp = timestamp.toEpochMilli(),
+        )
 }

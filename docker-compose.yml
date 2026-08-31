@@ -32,6 +32,9 @@ services:
     container_name: home-app-mqtt
     ports:
       - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
 
 volumes:
   postgres_data:

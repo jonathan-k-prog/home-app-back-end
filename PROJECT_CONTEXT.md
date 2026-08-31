@@ -10,10 +10,11 @@
 - Spring Boot `4.0.6`
 - Spring Web
 - Spring Data JPA
-- PostgreSQL en runtime principal
+- PostgreSQL en runtime principal (driver: `42.7.11` — CVE-2026-42198 patché)
 - H2 en runtime de test
 - MQTT via Eclipse Paho
 - Jackson Kotlin
+- Tomcat Embed `10.1.55` (core, el, websocket)
 
 ## Structure racine
 - `src/main/kotlin/com/back/homeapp` : code source principal
@@ -27,10 +28,12 @@
 ## Packages backend
 - `apiResponse` : wrapper de reponse API commun
 - `config` : configuration Spring, CORS et Jackson
+- `config` : configuration Spring, CORS, Jackson et clients HTTP partages
 - `device` : domaine devices avec controller, service, repository, request, response, entity
 - `room` : domaine rooms avec controller, service, repository, request, response, entity
 - `humidityReport` : domaine des releves d'humidite
 - `temperatureReport` : domaine des releves de temperature
+- `weather` : integration WeatherAPI avec controller, service et reponse associee
 - `mqtt` : abonnement MQTT et transformation des messages entrants en rapports humidite / temperature
 - `globalExecption` : gestion globale des erreurs API via `RestControllerAdvice`
 
@@ -51,6 +54,7 @@
 - `GET/POST /api/devices`
 - `GET /api/devices/roomId/{roomId}`
 - `GET/PUT/DELETE /api/devices/{id}`
+- `GET /api/weather`
 - Les modules `humidityReport` et `temperatureReport` possedent aussi leurs propres controllers REST.
 
 ## Flux MQTT
@@ -79,6 +83,10 @@
 - `MQTT_BROKER_URL`
 - `MQTT_CLIENT_ID`
 - `MQTT_TOPIC`
+- `WEATHER_API`
+- `WEATHER_BASE_URL`
+- `WEATHER_LOCATION`
+- `GOOGLE_GENAI_API_KEY`
 
 ## Execution locale
 - Lancement Gradle habituel : `./gradlew bootRun`
@@ -94,6 +102,14 @@
 ## Etat actuel des tests visibles
 - Test de chargement Spring : `HomeAppApplicationTests`
 - Test d'integration domaine room : `RoomServiceIntegrationTest`
+- Test d'integration domaine device (MockMvc + JWT reel via `JwtService`) : `DeviceControllerIntegrationTest`
+
+## Probleme connu non resolu : mismatch Jackson 2.x / 3.x
+- `build.gradle.kts` importe `tools.jackson:jackson-bom:3.1.4` (Jackson 3.x, utilise reellement par l'`ObjectMapper` de Spring Boot 4.x).
+- `implementation("com.fasterxml.jackson.module:jackson-module-kotlin")` resout vers la coordonnee Jackson **2.x** (`com.fasterxml.jackson.module:jackson-module-kotlin:2.21.2`, qui tire `com.fasterxml.jackson.core:jackson-databind:2.21.2`).
+- Consequence : le support Kotlin (valeurs par defaut de parametres, non-nullabilite) n'est pas applique sur le vrai `ObjectMapper` Jackson 3.x. Un champ primitif avec valeur par defaut Kotlin (ex. `connected: Boolean = false` dans `DeviceRequest`) absent du JSON provoque une `HttpMessageNotReadableException` ("Cannot map `null` into type `boolean`") au lieu d'utiliser le defaut.
+- Impact reel (pas seulement les tests) : tout client omettant un champ optionnel dans une requete de creation recoit un 400.
+- Non corrige pour le moment (decision explicite le 2026-07-23) : il faut trouver/valider la bonne coordonnee du module Kotlin compatible Jackson 3.x avant de remplacer la dependance.
 
 ## Conventions utiles pour les prochaines interventions
 - Commencer par verifier `PROJECT_CONTEXT.md` avant d'explorer le code.

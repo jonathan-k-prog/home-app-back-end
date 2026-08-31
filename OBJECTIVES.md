@@ -19,22 +19,7 @@ Ameliorer le backend Home App en pratiquant les sujets importants d'une API mode
 
 ## Progression recommandee
 
-### 1. Recuperer les devices d'une room
-
-Implementer un endpoint dedie :
-
-```http
-GET /api/rooms/{roomId}/devices
-```
-
-Objectifs techniques :
-
-- manipuler une relation `Room -> Device`
-- ecrire une query method Spring Data JPA
-- retourner une liste de `DeviceResponse`
-- tester un cas simple de filtre par relation
-
-### 2. Recuperer le dernier releve d'un device
+### 1. Recuperer le dernier releve d'un device
 
 Implementer un endpoint du type :
 
@@ -49,7 +34,7 @@ Objectifs techniques :
 - creer une response metier combinee
 - gerer le cas ou aucun releve n'existe
 
-### 3. Ajouter un historique filtre des mesures
+### 2. Ajouter un historique filtre des mesures
 
 Implementer des endpoints avec query params :
 
@@ -65,7 +50,7 @@ Objectifs techniques :
 - pratiquer les types date / heure Kotlin et Java Time
 - structurer les methodes de repository
 
-### 4. Calculer des statistiques par room
+### 3. Calculer des statistiques par room
 
 Implementer un endpoint :
 
@@ -80,7 +65,7 @@ Objectifs techniques :
 - agreger des donnees venant de plusieurs devices
 - construire un DTO de statistiques
 
-### 5. Ajouter des seuils et alertes
+### 4. Ajouter des seuils et alertes
 
 Implementer des regles d'alerte :
 
@@ -102,7 +87,7 @@ Objectifs techniques :
 - separer la logique d'alerte dans un service dedie
 - tester des regles metier
 
-### 6. Ajouter validation et erreurs propres
+### 5. Ajouter validation et erreurs propres
 
 Ameliorer les requests avec Bean Validation :
 
@@ -125,7 +110,7 @@ Objectifs techniques :
 - gerer les erreurs de validation
 - gerer les ressources non trouvees
 
-### 7. Ajouter la pagination
+### 6. Ajouter la pagination
 
 Implementer la pagination sur les listes volumineuses :
 
@@ -141,7 +126,7 @@ Objectifs techniques :
 - trier les donnees par date
 - comprendre `Page<T>` avec Spring Data JPA
 
-### 8. Ajouter les commandes vers devices
+### 7. Ajouter les commandes vers devices
 
 Implementer un endpoint pour envoyer des commandes :
 
@@ -163,7 +148,7 @@ Objectifs techniques :
 - historiser les commandes envoyees
 - gerer le statut d'une commande
 
-### 9. Ajouter utilisateurs, maisons et droits d'acces
+### 8. Ajouter utilisateurs, maisons et droits d'acces
 
 Faire evoluer le modele vers :
 
@@ -178,7 +163,7 @@ Objectifs techniques :
 - filtrer les donnees par utilisateur
 - mieux structurer les frontieres metier
 
-### 10. Ajouter authentification JWT
+### 9. Ajouter authentification JWT
 
 Proteger l'API avec Spring Security :
 
@@ -196,14 +181,13 @@ Objectifs techniques :
 
 ## Ordre conseille
 
-1. Recuperer les devices d'une room
-2. Recuperer le dernier releve d'un device
-3. Calculer des statistiques par room
-4. Ajouter des seuils et alertes
-5. Ajouter validation et erreurs propres
-6. Ajouter la pagination
-7. Ajouter les commandes MQTT sortantes
-8. Ajouter utilisateurs, maisons et authentification
+1. Recuperer le dernier releve d'un device
+2. Calculer des statistiques par room
+3. Ajouter des seuils et alertes
+4. Ajouter validation et erreurs propres
+5. Ajouter la pagination
+6. Ajouter les commandes MQTT sortantes
+7. Ajouter utilisateurs, maisons et authentification
 
 ## Critere de qualite pour chaque objectif
 
