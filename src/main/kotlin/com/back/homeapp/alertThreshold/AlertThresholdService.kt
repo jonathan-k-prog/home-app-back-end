@@ -5,6 +5,14 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
+/**
+ * Service class for managing alert thresholds.
+ *
+ * This service provides methods to create, retrieve, update, and delete alert thresholds associated with devices.
+ *
+ * @property alertThresholdRepository The repository for accessing alert threshold data.
+ * @property deviceRepository The repository for accessing device data.
+ */
 @Service
 class AlertThresholdService(
     private val alertThresholdRepository: AlertThresholdRepository,
